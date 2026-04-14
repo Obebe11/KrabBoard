@@ -5,5 +5,6 @@
   "schedule_hour": 8,
   "dashboard_title": "Мой дашборд",
   "ai_model": "GPT-4o",
-  "ai_provider": "OpenAI"
+  "ai_provider": "OpenAI",
+  "tasks_md_path": "/root/.openclaw/workspace/TASKS.md"
 }
