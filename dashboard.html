@@ -3,16 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <style>
+  /* ═══════════════════════════════════════════
+     CSS VARIABLES — light / dark themes
+  ═══════════════════════════════════════════ */
+  .theme-dark {
+    --bg:             #0f172a;
+    --bg-card:        #1e293b;
+    --bg-deep:        #0f172a;
+    --border:         #334155;
+    --border-subtle:  #1e293b;
+    --text-1:         #f8fafc;
+    --text-2:         #94a3b8;
+    --text-3:         #475569;
+    --text-4:         #334155;
+    --weather-grad:   linear-gradient(135deg, #1e3a5f 0%, #162032 100%);
+    --weather-border: #263d5a;
+    --weather-text:   #7fa8cc;
+    --weather-detail: #4d7a9e;
+    --weather-city:   #2d4a65;
+    --sys-grad:       linear-gradient(135deg, #1a2e1a 0%, #162032 100%);
+    --sys-border:     #234023;
+    --sys-icon-bg:    #0f1f0f;
+    --progress-bg:    #0f172a;
+    --footer-border:  #1a2540;
+    --badge-done-bg:  #14532d;
+    --badge-done-fg:  #22c55e;
+    --badge-wip-bg:   #1e3a5f;
+    --badge-wip-fg:   #60a5fa;
+    --badge-todo-bg:  #1e293b;
+    --badge-todo-fg:  #64748b;
+    --shadow:         0 2px 8px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.25);
+    --shadow-sm:      0 1px 4px rgba(0,0,0,.3);
+  }
+
+  .theme-light {
+    --bg:             #f1f5f9;
+    --bg-card:        #ffffff;
+    --bg-deep:        #f8fafc;
+    --border:         #e2e8f0;
+    --border-subtle:  #f1f5f9;
+    --text-1:         #0f172a;
+    --text-2:         #475569;
+    --text-3:         #94a3b8;
+    --text-4:         #cbd5e1;
+    --weather-grad:   linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+    --weather-border: #bfdbfe;
+    --weather-text:   #2563eb;
+    --weather-detail: #3b82f6;
+    --weather-city:   #93c5fd;
+    --sys-grad:       linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+    --sys-border:     #bbf7d0;
+    --sys-icon-bg:    #f0fdf4;
+    --progress-bg:    #f1f5f9;
+    --footer-border:  #e2e8f0;
+    --badge-done-bg:  #dcfce7;
+    --badge-done-fg:  #16a34a;
+    --badge-wip-bg:   #dbeafe;
+    --badge-wip-fg:   #2563eb;
+    --badge-todo-bg:  #f8fafc;
+    --badge-todo-fg:  #94a3b8;
+    --shadow:         0 2px 8px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-sm:      0 1px 3px rgba(0,0,0,.06);
+  }
+
+  /* ═══════════════════════════════════════════
+     BASE
+  ═══════════════════════════════════════════ */
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont,
                  "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji",
                  "Segoe UI Symbol", "Noto Emoji", sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
+    background: var(--bg);
+    color: var(--text-1);
     width: 800px;
-    padding: 24px 24px 20px;
+    padding: 22px 22px 18px;
+    transition: background 0.3s;
   }
 
   /* ── HEADER ── */
@@ -20,155 +87,152 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #1e293b;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
   }
   .header-title {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
-    color: #f8fafc;
+    color: var(--text-1);
     letter-spacing: -0.3px;
   }
-  .header-date {
-    font-size: 13px;
-    color: #64748b;
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-top: 3px;
   }
-  .header-time {
-    font-size: 30px;
+  .header-date {
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .theme-badge {
+    font-size: 9px;
     font-weight: 700;
-    color: #cbd5e1;
+    padding: 2px 7px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .theme-badge-dark  { background: #1e3a5f; color: #60a5fa; }
+  .theme-badge-light { background: #dbeafe; color: #2563eb; }
+  .header-time {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-2);
     letter-spacing: -1px;
   }
 
   /* ── TOP ROW ── */
   .top-row {
     display: flex;
-    gap: 14px;
-    margin-bottom: 18px;
+    gap: 12px;
+    margin-bottom: 16px;
   }
 
   /* ── WEATHER ── */
   .weather-card {
-    background: linear-gradient(135deg, #1e3a5f 0%, #162032 100%);
+    background: var(--weather-grad);
     border-radius: 14px;
-    padding: 16px 20px;
-    min-width: 215px;
-    border: 1px solid #263d5a;
+    padding: 15px 18px;
+    min-width: 210px;
+    border: 1px solid var(--weather-border);
     flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
   }
-  .weather-main {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .weather-emoji {
-    font-size: 44px;
-    line-height: 1;
-  }
-  .weather-temp-block {}
+  .weather-main { display: flex; align-items: center; gap: 10px; }
+  .weather-emoji { font-size: 42px; line-height: 1; }
   .weather-temp {
-    font-size: 38px;
+    font-size: 36px;
     font-weight: 800;
-    color: #f8fafc;
+    color: var(--text-1);
     line-height: 1;
     letter-spacing: -2px;
   }
-  .weather-unit {
-    font-size: 16px;
-    color: #94a3b8;
-    font-weight: 400;
-  }
-  .weather-desc {
-    font-size: 12px;
-    color: #7fa8cc;
-    margin-top: 3px;
-  }
+  .weather-unit { font-size: 15px; color: var(--text-2); font-weight: 400; }
+  .weather-desc { font-size: 11px; color: var(--weather-text); margin-top: 3px; }
   .weather-details {
     display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    font-size: 11px;
-    color: #4d7a9e;
+    gap: 8px;
+    margin-top: 9px;
+    font-size: 10px;
+    color: var(--weather-detail);
   }
   .weather-city {
-    font-size: 10px;
-    color: #2d4a65;
-    margin-top: 6px;
+    font-size: 9px;
+    color: var(--weather-city);
+    margin-top: 5px;
     text-transform: uppercase;
     letter-spacing: 1.2px;
   }
 
   /* ── STATS ── */
-  .stats-row {
-    display: flex;
-    gap: 10px;
-    flex: 1;
-  }
+  .stats-row { display: flex; gap: 9px; flex: 1; }
   .stat-card {
     flex: 1;
-    background: #1e293b;
+    background: var(--bg-card);
     border-radius: 14px;
-    padding: 14px 10px;
-    border: 1px solid #334155;
+    padding: 12px 8px;
+    border: 1px solid var(--border);
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    box-shadow: var(--shadow-sm);
   }
   .stat-value {
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 800;
     line-height: 1;
     letter-spacing: -1px;
   }
   .stat-label {
-    font-size: 10px;
-    color: #475569;
-    margin-top: 5px;
+    font-size: 9px;
+    color: var(--text-3);
+    margin-top: 4px;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     font-weight: 600;
   }
-  .stat-done   .stat-value { color: #22c55e; }
-  .stat-wip    .stat-value { color: #3b82f6; }
-  .stat-todo   .stat-value { color: #94a3b8; }
-  .stat-pct    .stat-value { color: #f59e0b; }
+  .stat-done .stat-value { color: #22c55e; }
+  .stat-wip  .stat-value { color: #3b82f6; }
+  .stat-todo .stat-value { color: var(--text-3); }
+  .stat-pct  .stat-value { color: #f59e0b; }
 
   /* ── SECTION TITLE ── */
   .section-title {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    color: #334155;
+    color: var(--text-3);
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
+    margin-top: 4px;
   }
 
   /* ── TASK CARDS ── */
   .task-card {
     display: flex;
-    background: #1e293b;
+    background: var(--bg-card);
     border-radius: 12px;
-    margin-bottom: 7px;
-    border: 1px solid #334155;
+    margin-bottom: 6px;
+    border: 1px solid var(--border);
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow);
   }
   .task-accent { width: 4px; flex-shrink: 0; }
-  .task-body { flex: 1; padding: 10px 14px; }
-
+  .task-body { flex: 1; padding: 9px 13px; }
   .task-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 7px;
+    margin-bottom: 6px;
   }
   .task-title {
     font-size: 13px;
     font-weight: 600;
-    color: #f1f5f9;
+    color: var(--text-1);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -177,86 +241,141 @@
   .task-badge {
     font-size: 9px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 2px 7px;
     border-radius: 20px;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.5px;
     flex-shrink: 0;
     margin-left: 8px;
   }
-  .badge-done     { background: #14532d; color: #22c55e; }
-  .badge-wip      { background: #1e3a5f; color: #60a5fa; }
-  .badge-todo     { background: #1e293b; color: #64748b; border: 1px solid #334155; }
+  .badge-done { background: var(--badge-done-bg); color: var(--badge-done-fg); }
+  .badge-wip  { background: var(--badge-wip-bg);  color: var(--badge-wip-fg);  }
+  .badge-todo { background: var(--badge-todo-bg); color: var(--badge-todo-fg); border: 1px solid var(--border); }
 
-  .progress-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .progress-row { display: flex; align-items: center; gap: 9px; }
   .progress-track {
     flex: 1;
     height: 5px;
-    background: #0f172a;
+    background: var(--progress-bg);
     border-radius: 3px;
     overflow: hidden;
   }
-  .progress-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.3s;
-  }
+  .progress-fill { height: 100%; border-radius: 3px; }
   .progress-pct {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    color: #64748b;
-    min-width: 30px;
+    color: var(--text-3);
+    min-width: 28px;
     text-align: right;
   }
+  .task-deadline { font-size: 10px; display: block; margin-top: 4px; }
 
-  .task-deadline {
-    font-size: 10px;
-    display: block;
-    margin-top: 5px;
+  /* ── SYSTEM INFO ── */
+  .sys-card {
+    background: var(--sys-grad);
+    border: 1px solid var(--sys-border);
+    border-radius: 14px;
+    padding: 13px 16px;
+    margin-top: 4px;
+    box-shadow: var(--shadow-sm);
   }
+  .sys-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .sys-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+  .sys-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sys-icon-bg);
+    border-radius: 8px;
+  }
+  .sys-text {}
+  .sys-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+  }
+  .sys-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-1);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+  .sys-sub {
+    font-size: 9px;
+    color: var(--text-3);
+    margin-top: 1px;
+  }
+
+  /* ── METER BAR (for RAM/CPU) ── */
+  .meter-track {
+    width: 100%;
+    height: 3px;
+    background: var(--progress-bg);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 3px;
+  }
+  .meter-fill { height: 100%; border-radius: 2px; }
 
   /* ── EMPTY STATE ── */
-  .empty {
-    color: #334155;
-    font-size: 13px;
-    padding: 16px 0;
-    text-align: center;
-  }
+  .empty { color: var(--text-3); font-size: 13px; padding: 14px 0; text-align: center; }
 
   /* ── FOOTER ── */
   .footer {
-    margin-top: 14px;
-    padding-top: 10px;
-    border-top: 1px solid #1a2540;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--footer-border);
     text-align: center;
-    font-size: 10px;
-    color: #1e293b;
+    font-size: 9px;
+    color: var(--text-4);
     letter-spacing: 0.5px;
   }
 </style>
 </head>
-<body>
+<body class="{{THEME_CLASS}}">
 
   <!-- HEADER -->
   <div class="header">
     <div>
       <div class="header-title">{{TITLE}}</div>
-      <div class="header-date">{{DATE}}</div>
+      <div class="header-meta">
+        <span class="header-date">{{DATE}}</span>
+        <span class="theme-badge {{THEME_BADGE_CLASS}}">{{THEME_LABEL}}</span>
+      </div>
     </div>
     <div class="header-time">{{TIME}}</div>
   </div>
 
   <!-- TOP ROW: weather + stats -->
   <div class="top-row">
-
     <div class="weather-card">
       <div class="weather-main">
         <span class="weather-emoji">{{W_EMOJI}}</span>
-        <div class="weather-temp-block">
+        <div>
           <span class="weather-temp">{{W_TEMP}}</span><span class="weather-unit">°C</span>
           <div class="weather-desc">{{W_DESC}}</div>
         </div>
@@ -287,15 +406,22 @@
         <div class="stat-label">Прогресс</div>
       </div>
     </div>
-
   </div>
 
   <!-- TASKS -->
   <div class="section-title">Задачи ({{TASK_COUNT}})</div>
   {{TASK_CARDS}}
 
+  <!-- SYSTEM INFO -->
+  <div class="section-title" style="margin-top:14px">Система</div>
+  <div class="sys-card">
+    <div class="sys-grid">
+      {{SYS_ITEMS}}
+    </div>
+  </div>
+
   <!-- FOOTER -->
-  <div class="footer">KrabBoard • обновлено {{TIME}}</div>
+  <div class="footer">KrabBoard v1.2 • обновлено {{TIME}}</div>
 
 </body>
 </html>

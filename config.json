@@ -3,5 +3,7 @@
   "CHAT_ID": "ВАШ_CHAT_ID",
   "city": "Moscow",
   "schedule_hour": 8,
-  "dashboard_title": "Мой дашборд"
+  "dashboard_title": "Мой дашборд",
+  "ai_model": "GPT-4o",
+  "ai_provider": "OpenAI"
 }
