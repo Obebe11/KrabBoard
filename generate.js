@@ -5,6 +5,7 @@ const axios     = require('axios');
 const FormData  = require('form-data');
 const fs        = require('fs');
 const path      = require('path');
+const os        = require('os');
 
 const DIR = __dirname;
 
@@ -56,6 +57,75 @@ async function getWeather(city) {
 }
 
 // ─────────────────────────────────────────────
+// Theme
+// ─────────────────────────────────────────────
+
+function getTheme(now) {
+  const h = now.getHours();
+  return (h >= 6 && h < 20) ? 'light' : 'dark';
+}
+
+// ─────────────────────────────────────────────
+// System info
+// ─────────────────────────────────────────────
+
+function meterBar(pct, color) {
+  return `
+    <div class="meter-track">
+      <div class="meter-fill" style="width:${pct}%;background:${color}"></div>
+    </div>`;
+}
+
+function sysItem(icon, label, value, sub = '', meterPct = null, meterColor = '#22c55e') {
+  const meter = meterPct !== null ? meterBar(meterPct, meterColor) : '';
+  return `
+  <div class="sys-item">
+    <div class="sys-icon">${icon}</div>
+    <div class="sys-text" style="flex:1;min-width:0">
+      <div class="sys-label">${label}</div>
+      <div class="sys-value">${value}</div>
+      ${sub ? `<div class="sys-sub">${sub}</div>` : ''}
+      ${meter}
+    </div>
+  </div>`;
+}
+
+function buildSysItems(config) {
+  const totalMem  = os.totalmem();
+  const freeMem   = os.freemem();
+  const usedMem   = totalMem - freeMem;
+  const memPct    = Math.round((usedMem / totalMem) * 100);
+  const toGB      = b => (b / 1024 ** 3).toFixed(1);
+
+  const cpus      = os.cpus();
+  const cpuCount  = cpus.length;
+  const cpuModel  = (cpus[0]?.model || 'CPU').replace(/\s+/g, ' ').trim();
+  const loadAvg   = os.loadavg()[0];
+  const cpuPct    = Math.min(100, Math.round((loadAvg / cpuCount) * 100));
+  const cpuColor  = cpuPct > 80 ? '#ef4444' : cpuPct > 50 ? '#f59e0b' : '#3b82f6';
+
+  const uptimeSec  = os.uptime();
+  const uptimeDays = Math.floor(uptimeSec / 86400);
+  const uptimeHrs  = Math.floor((uptimeSec % 86400) / 3600);
+  const uptimeMins = Math.floor((uptimeSec % 3600) / 60);
+  const uptimeStr  = uptimeDays > 0
+    ? `${uptimeDays}д ${uptimeHrs}ч ${uptimeMins}м`
+    : `${uptimeHrs}ч ${uptimeMins}м`;
+
+  const memColor  = memPct > 85 ? '#ef4444' : memPct > 65 ? '#f59e0b' : '#22c55e';
+  const platform  = `${os.type()} ${os.arch()}`;
+
+  return [
+    sysItem('🤖', 'AI Модель',    config.ai_model || 'не указано',  config.ai_provider || ''),
+    sysItem('💾', 'ОЗУ',          `${memPct}%`,                     `${toGB(usedMem)} / ${toGB(totalMem)} GB`, memPct, memColor),
+    sysItem('⚡', 'CPU нагрузка', `${cpuPct}%`,                     `${cpuCount} ядер • load ${loadAvg.toFixed(2)}`, cpuPct, cpuColor),
+    sysItem('🕐', 'Аптайм',       uptimeStr,                        platform),
+    sysItem('🟢', 'Node.js',      process.version,                  `v8 ${process.versions.v8}`),
+    sysItem('💻', 'Хост',         os.hostname(),                    os.release()),
+  ].join('\n');
+}
+
+// ─────────────────────────────────────────────
 // Task helpers
 // ─────────────────────────────────────────────
 
@@ -103,7 +173,7 @@ function buildTaskCards(tasks) {
         </div>
         <div class="progress-row">
           <div class="progress-track">
-            <div class="progress-fill" style="width:${pct}%;background:${color}"></div>
+            <div class="progress-fill" style="width:${pct}%;background:linear-gradient(90deg, ${color}, ${color}99)"></div>
           </div>
           <span class="progress-pct">${pct}%</span>
         </div>
@@ -129,25 +199,34 @@ function renderHTML(weather, tasks, config) {
     ? Math.round(tasks.reduce((a, t) => a + (t.progress || 0), 0) / tasks.length)
     : 0;
 
+  const theme      = getTheme(now);
+  const themeClass = `theme-${theme}`;
+  const themeLabel = theme === 'light' ? '☀️ Дневная тема' : '🌙 Ночная тема';
+  const themeBadge = theme === 'light' ? 'theme-badge-light' : 'theme-badge-dark';
+
   const template = fs.readFileSync(path.join(DIR, 'dashboard.html'), 'utf8');
 
   return template
-    .replace('{{TITLE}}',      config.dashboard_title || 'Мой дашборд')
-    .replace('{{DATE}}',       dateStr)
-    .replace(/{{TIME}}/g,      timeStr)
-    .replace('{{W_EMOJI}}',    weather.emoji)
-    .replace('{{W_TEMP}}',     weather.temp)
-    .replace('{{W_DESC}}',     weather.desc)
-    .replace('{{W_HUM}}',      weather.hum)
-    .replace('{{W_WIND}}',     weather.wind)
-    .replace('{{W_FEELS}}',    weather.feels)
-    .replace('{{W_CITY}}',     weather.city)
-    .replace('{{S_DONE}}',     String(done))
-    .replace('{{S_WIP}}',      String(wip))
-    .replace('{{S_TODO}}',     String(todo))
-    .replace('{{S_PCT}}',      String(pct))
-    .replace('{{TASK_COUNT}}', String(tasks.length))
-    .replace('{{TASK_CARDS}}', buildTaskCards(tasks));
+    .replace('{{THEME_CLASS}}',      themeClass)
+    .replace('{{THEME_LABEL}}',      themeLabel)
+    .replace('{{THEME_BADGE_CLASS}}', themeBadge)
+    .replace('{{TITLE}}',            config.dashboard_title || 'Мой дашборд')
+    .replace('{{DATE}}',             dateStr)
+    .replace(/{{TIME}}/g,            timeStr)
+    .replace('{{W_EMOJI}}',          weather.emoji)
+    .replace('{{W_TEMP}}',           weather.temp)
+    .replace('{{W_DESC}}',           weather.desc)
+    .replace('{{W_HUM}}',            weather.hum)
+    .replace('{{W_WIND}}',           weather.wind)
+    .replace('{{W_FEELS}}',          weather.feels)
+    .replace('{{W_CITY}}',           weather.city)
+    .replace('{{S_DONE}}',           String(done))
+    .replace('{{S_WIP}}',            String(wip))
+    .replace('{{S_TODO}}',           String(todo))
+    .replace('{{S_PCT}}',            String(pct))
+    .replace('{{TASK_COUNT}}',       String(tasks.length))
+    .replace('{{TASK_CARDS}}',       buildTaskCards(tasks))
+    .replace('{{SYS_ITEMS}}',        buildSysItems(config));
 }
 
 // ─────────────────────────────────────────────
@@ -156,6 +235,7 @@ function renderHTML(weather, tasks, config) {
 
 async function screenshot(html, outPath) {
   const browser = await puppeteer.launch({
+    headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
   const page = await browser.newPage();
@@ -192,8 +272,23 @@ async function sendToTelegram(token, chatId, imagePath, caption) {
 // Main
 // ─────────────────────────────────────────────
 
+function requireFile(filename) {
+  const filePath = path.join(DIR, filename);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(
+      `Ошибка: файл конфигурации не найден — ${filename}\n` +
+      `Убедись, что файл ${filePath} существует и заполнен.`
+    );
+  }
+  return filePath;
+}
+
 async function main() {
   console.log('🚀 KrabBoard: генерация дашборда...');
+
+  requireFile('config.json');
+  requireFile('tasks.json');
+  requireFile('dashboard.html');
 
   const config    = JSON.parse(fs.readFileSync(path.join(DIR, 'config.json'),  'utf8'));
   const tasksData = JSON.parse(fs.readFileSync(path.join(DIR, 'tasks.json'),   'utf8'));
@@ -234,7 +329,13 @@ if (args.includes('--now')) {
 
 } else {
   // Встроенный планировщик: node generate.js
-  const config       = JSON.parse(fs.readFileSync(path.join(DIR, 'config.json'), 'utf8'));
+  const cfgPath = path.join(DIR, 'config.json');
+  if (!fs.existsSync(cfgPath)) {
+    console.error('❌ Ошибка: файл конфигурации не найден — config.json');
+    console.error(`   Создай файл: ${cfgPath}`);
+    process.exit(1);
+  }
+  const config       = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
   const scheduleHour = config.schedule_hour ?? 8;
 
   console.log(`⏰ Планировщик запущен. Дашборд будет отправляться каждый день в ${scheduleHour}:00.`);
