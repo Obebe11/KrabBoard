@@ -43,23 +43,22 @@ function msUntilMoscowHour(targetHour) {
 // Weather
 // ─────────────────────────────────────────────
 
-const WEATHER_EMOJI = {
-  113: '☀️',
-  116: '⛅',
-  119: '☁️',
-  122: '☁️',
-  143: '🌫️', 248: '🌫️', 260: '🌫️',
-  200: '⛈️',
-  227: '❄️', 230: '❄️',
-  263: '🌦️', 266: '🌦️',
-  281: '🌧️', 284: '🌧️',
-  293: '🌦️', 296: '🌦️',
-  299: '🌧️', 302: '🌧️', 305: '🌧️', 308: '🌧️',
-  311: '🌨️', 314: '🌨️', 317: '🌨️', 320: '🌨️',
-  323: '❄️', 326: '❄️', 329: '❄️', 332: '❄️', 335: '❄️', 338: '❄️',
-  350: '🌧️', 353: '🌧️', 356: '🌧️', 359: '🌧️',
-  362: '🌨️', 365: '🌨️', 374: '🌨️', 377: '🌨️',
-  386: '⛈️', 389: '⛈️', 392: '⛈️', 395: '⛈️',
+const WEATHER_LABEL = {
+  113: 'SUN',
+  116: 'PCLOUD',
+  119: 'CLOUD',  122: 'CLOUD',
+  143: 'FOG',    248: 'FOG',   260: 'FOG',
+  200: 'STORM',
+  227: 'SNOW',   230: 'SNOW',
+  263: 'DRIZ',   266: 'DRIZ',
+  281: 'SLEET',  284: 'SLEET',
+  293: 'DRIZ',   296: 'DRIZ',
+  299: 'RAIN',   302: 'RAIN',  305: 'RAIN',  308: 'RAIN',
+  311: 'SLEET',  314: 'SLEET', 317: 'SLEET', 320: 'SLEET',
+  323: 'SNOW',   326: 'SNOW',  329: 'SNOW',  332: 'SNOW',  335: 'SNOW',  338: 'SNOW',
+  350: 'RAIN',   353: 'RAIN',  356: 'RAIN',  359: 'RAIN',
+  362: 'SLEET',  365: 'SLEET', 374: 'SLEET', 377: 'SLEET',
+  386: 'STORM',  389: 'STORM', 392: 'STORM', 395: 'STORM',
 };
 
 async function getWeather(city) {
@@ -72,17 +71,17 @@ async function getWeather(city) {
     const c = res.data.current_condition[0];
     const code = parseInt(c.weatherCode, 10);
     return {
-      temp:   c.temp_C,
-      feels:  c.FeelsLikeC,
-      desc:   c.weatherDesc[0].value,
-      hum:    c.humidity,
-      wind:   c.windspeedKmph,
-      emoji:  WEATHER_EMOJI[code] || '🌡️',
+      temp:  c.temp_C,
+      feels: c.FeelsLikeC,
+      desc:  c.weatherDesc[0].value,
+      hum:   c.humidity,
+      wind:  c.windspeedKmph,
+      label: WEATHER_LABEL[code] || 'N/A',
       city,
     };
   } catch (err) {
-    console.warn('⚠️  Не удалось получить погоду:', err.message);
-    return { temp: '—', feels: '—', desc: 'Нет данных', hum: '—', wind: '—', emoji: '🌡️', city };
+    console.warn('Weather fetch failed:', err.message);
+    return { temp: '—', feels: '—', desc: 'No data', hum: '—', wind: '—', label: 'N/A', city };
   }
 }
 
@@ -117,9 +116,18 @@ function getTheme() {
  *   - Приоритет: high / medium / low (необязателен, по умолчанию medium)
  */
 function parseTasks(md) {
-  const tasks      = [];
-  let   id         = 1;
-  const KNOWN_COLS = new Set(['задача', 'title', 'task', 'название']);
+  const tasks = [];
+  let   id    = 1;
+
+  // Ключевые слова, по которым опознаётся строка-заголовок таблицы.
+  // Проверяем ВСЕ ячейки строки, а не только первую.
+  const HEADER_WORDS = new Set([
+    'задача', 'task', 'title', 'название',
+    'статус', 'status',
+    'прогресс', 'progress',
+    'дедлайн', 'deadline',
+    'приоритет', 'priority',
+  ]);
 
   for (const rawLine of md.split('\n')) {
     const line = rawLine.trim();
@@ -134,8 +142,16 @@ function parseTasks(md) {
 
     const [col0, col1 = '', col2 = '', col3 = '', col4 = ''] = cells;
 
-    // Пропускаем строку-заголовок
-    if (!col0 || KNOWN_COLS.has(col0.toLowerCase())) continue;
+    // Пропускаем строку-заголовок: достаточно одного совпадения в любой ячейке
+    if (cells.some(c => HEADER_WORDS.has(c.toLowerCase()))) continue;
+
+    // Пустой заголовок задачи — пропускаем
+    if (!col0) continue;
+
+    // Guard: колонка «Прогресс» должна быть числом (или пустой)
+    // Если там текст — это нераспознанный заголовок или мусор
+    const rawProg = col1.replace('%', '').trim();
+    if (rawProg !== '' && !/^\d+$/.test(rawProg)) continue;
 
     // Маркер [x] в названии → задача завершена
     const isDoneMarker = /^\[x\]/i.test(col0);
@@ -250,12 +266,12 @@ function buildSysItems(config) {
     : `${uptimeHrs}ч ${uptimeMins}м`;
 
   return [
-    sysItem('🤖', 'AI Модель',    config.ai_model || 'не указано', config.ai_provider || ''),
-    sysItem('💾', 'ОЗУ',          `${memPct}%`,                    `${toGB(usedMem)} / ${toGB(totalMem)} GB`, memPct, memColor),
-    sysItem('⚡', 'CPU нагрузка', `${cpuPct}%`,                    `${cpuCount} ядер • load ${loadAvg.toFixed(2)}`, cpuPct, cpuColor),
-    sysItem('🕐', 'Аптайм',       uptimeStr,                       `${os.type()} ${os.arch()}`),
-    sysItem('🟢', 'Node.js',      process.version,                 `v8 ${process.versions.v8}`),
-    sysItem('💻', 'Хост',         os.hostname(),                   os.release()),
+    sysItem('AI',   'AI Модель',    config.ai_model || 'не указано', config.ai_provider || ''),
+    sysItem('MEM',  'ОЗУ',          `${memPct}%`,                    `${toGB(usedMem)} / ${toGB(totalMem)} GB`, memPct, memColor),
+    sysItem('CPU',  'CPU нагрузка', `${cpuPct}%`,                    `${cpuCount} ядер • load ${loadAvg.toFixed(2)}`, cpuPct, cpuColor),
+    sysItem('UP',   'Аптайм',       uptimeStr,                       `${os.type()} ${os.arch()}`),
+    sysItem('NODE', 'Node.js',      process.version,                 `v8 ${process.versions.v8}`),
+    sysItem('HOST', 'Хост',         os.hostname(),                   os.release()),
   ].join('\n');
 }
 
@@ -344,7 +360,7 @@ function renderHTML(weather, tasks, config) {
 
   const theme      = getTheme(); // использует московское время внутри
   const themeClass = `theme-${theme}`;
-  const themeLabel = theme === 'light' ? '☀️ Дневная тема' : '🌙 Ночная тема';
+  const themeLabel = theme === 'light' ? 'DAY' : 'NIGHT';
   const themeBadge = theme === 'light' ? 'theme-badge-light' : 'theme-badge-dark';
 
   const template = fs.readFileSync(path.join(DIR, 'dashboard.html'), 'utf8');
@@ -356,7 +372,7 @@ function renderHTML(weather, tasks, config) {
     .replace('{{TITLE}}',             config.dashboard_title || 'Мой дашборд')
     .replace('{{DATE}}',              dateStr)
     .replace(/{{TIME}}/g,             timeStr)
-    .replace('{{W_EMOJI}}',           weather.emoji)
+    .replace('{{W_EMOJI}}',           weather.label)
     .replace('{{W_TEMP}}',            weather.temp)
     .replace('{{W_DESC}}',            weather.desc)
     .replace('{{W_HUM}}',             weather.hum)
