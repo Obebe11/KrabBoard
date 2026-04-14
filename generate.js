@@ -117,39 +117,36 @@ function getTheme() {
  */
 function parseTasks(md) {
   const tasks = [];
-  let   id    = 1;
+  let id = 1;
 
-  // Ключевые слова, по которым опознаётся строка-заголовок таблицы.
-  // Проверяем ВСЕ ячейки строки, а не только первую.
-  const HEADER_WORDS = new Set([
-    'задача', 'task', 'title', 'название',
-    'статус', 'status',
-    'прогресс', 'progress',
-    'дедлайн', 'deadline',
-    'приоритет', 'priority',
+  // Только имена колонки «Название задачи» (col0).
+  // Намеренно НЕ проверяем остальные ячейки — иначе задача
+  // «Обновить статус проекта» ложно опознавалась бы как заголовок.
+  const TITLE_HEADERS = new Set([
+    'задача', 'task', 'title', 'название', '#', 'no',
   ]);
 
   for (const rawLine of md.split('\n')) {
     const line = rawLine.trim();
 
-    // Только строки таблицы: начинаются и заканчиваются на |
-    if (!line.startsWith('|') || !line.endsWith('|')) continue;
-    // Пропускаем разделитель |---|---|
-    if (/^\|[\s\-:|]+\|$/.test(line)) continue;
+    // Строка должна начинаться с | и содержать хотя бы ещё одну |
+    if (!line.startsWith('|')) continue;
+    if (!line.includes('|', 1)) continue;
 
-    const cells = line.split('|').slice(1, -1).map(c => c.trim());
+    // Пропускаем разделитель |---|---| по наличию ---
+    if (line.includes('---')) continue;
+
+    // Парсим ячейки: поддерживаем строки как с закрывающим |, так и без
+    const normalized = line.endsWith('|') ? line : line + '|';
+    const cells = normalized.split('|').slice(1, -1).map(c => c.trim());
     if (cells.length < 2) continue;
 
     const [col0, col1 = '', col2 = '', col3 = '', col4 = ''] = cells;
 
-    // Пропускаем строку-заголовок: достаточно одного совпадения в любой ячейке
-    if (cells.some(c => HEADER_WORDS.has(c.toLowerCase()))) continue;
+    // Пропускаем строку-заголовок: только col0 проверяем по словарю
+    if (!col0 || TITLE_HEADERS.has(col0.toLowerCase())) continue;
 
-    // Пустой заголовок задачи — пропускаем
-    if (!col0) continue;
-
-    // Guard: колонка «Прогресс» должна быть числом (или пустой)
-    // Если там текст — это нераспознанный заголовок или мусор
+    // Guard: колонка «Прогресс» должна быть числом или пустой строкой
     const rawProg = col1.replace('%', '').trim();
     if (rawProg !== '' && !/^\d+$/.test(rawProg)) continue;
 
@@ -159,7 +156,7 @@ function parseTasks(md) {
     if (!title) continue;
 
     // Прогресс
-    const progress = Math.min(100, Math.max(0, parseInt(col1.replace('%', ''), 10) || 0));
+    const progress = Math.min(100, Math.max(0, parseInt(rawProg, 10) || 0));
 
     // Дедлайн: только если похоже на YYYY-MM-DD
     const deadline = /^\d{4}-\d{2}-\d{2}$/.test(col2.trim()) ? col2.trim() : null;
@@ -202,18 +199,19 @@ function syncFromTasksMd(mdPath, jsonPath) {
   const md       = fs.readFileSync(mdPath, 'utf8');
   const allTasks = parseTasks(md);
 
-  if (!allTasks.length) {
-    console.warn('⚠️  В TASKS.md не найдено ни одной задачи. Проверь формат таблицы.');
-    return false;
-  }
-
   // Фильтруем выполненные
-  const active  = allTasks.filter(t => t.status !== 'done' && t.progress < 100);
-  const hidden  = allTasks.length - active.length;
+  const active = allTasks.filter(t => t.status !== 'done' && t.progress < 100);
+  const hidden = allTasks.length - active.length;
 
-  console.log(`   Всего: ${allTasks.length} | Активных: ${active.length} | Скрыто завершённых: ${hidden}`);
-
+  // Всегда перезаписываем tasks.json — даже если задач нет,
+  // чтобы на дашборде не оставались «призраки» прошлых запусков.
   fs.writeFileSync(jsonPath, JSON.stringify({ tasks: active }, null, 2), 'utf8');
+
+  if (!allTasks.length) {
+    console.warn('   TASKS.md прочитан, но задачи не найдены. Проверь формат таблицы (см. TASKS.example.md).');
+  } else {
+    console.log(`   Всего: ${allTasks.length} | Активных: ${active.length} | Скрыто завершённых: ${hidden}`);
+  }
   console.log('✅ tasks.json обновлён из TASKS.md');
   return true;
 }
