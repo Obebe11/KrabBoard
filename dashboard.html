@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    width: 800px;
+    padding: 24px 24px 20px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .header-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8fafc;
+    letter-spacing: -0.3px;
+  }
+  .header-date {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 3px;
+  }
+  .header-time {
+    font-size: 30px;
+    font-weight: 700;
+    color: #cbd5e1;
+    letter-spacing: -1px;
+  }
+
+  /* ── TOP ROW ── */
+  .top-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  /* ── WEATHER ── */
+  .weather-card {
+    background: linear-gradient(135deg, #1e3a5f 0%, #162032 100%);
+    border-radius: 14px;
+    padding: 16px 20px;
+    min-width: 215px;
+    border: 1px solid #263d5a;
+    flex-shrink: 0;
+  }
+  .weather-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .weather-emoji {
+    font-size: 44px;
+    line-height: 1;
+  }
+  .weather-temp-block {}
+  .weather-temp {
+    font-size: 38px;
+    font-weight: 800;
+    color: #f8fafc;
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+  .weather-unit {
+    font-size: 16px;
+    color: #94a3b8;
+    font-weight: 400;
+  }
+  .weather-desc {
+    font-size: 12px;
+    color: #7fa8cc;
+    margin-top: 3px;
+  }
+  .weather-details {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: #4d7a9e;
+  }
+  .weather-city {
+    font-size: 10px;
+    color: #2d4a65;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  /* ── STATS ── */
+  .stats-row {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+  }
+  .stat-card {
+    flex: 1;
+    background: #1e293b;
+    border-radius: 14px;
+    padding: 14px 10px;
+    border: 1px solid #334155;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .stat-value {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: #475569;
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+  .stat-done   .stat-value { color: #22c55e; }
+  .stat-wip    .stat-value { color: #3b82f6; }
+  .stat-todo   .stat-value { color: #94a3b8; }
+  .stat-pct    .stat-value { color: #f59e0b; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+  }
+
+  /* ── TASK CARDS ── */
+  .task-card {
+    display: flex;
+    background: #1e293b;
+    border-radius: 10px;
+    margin-bottom: 7px;
+    border: 1px solid #334155;
+    overflow: hidden;
+  }
+  .task-accent { width: 4px; flex-shrink: 0; }
+  .task-body { flex: 1; padding: 10px 14px; }
+
+  .task-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+  }
+  .task-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 480px;
+  }
+  .task-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+  .badge-done     { background: #14532d; color: #22c55e; }
+  .badge-wip      { background: #1e3a5f; color: #60a5fa; }
+  .badge-todo     { background: #1e293b; color: #64748b; border: 1px solid #334155; }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 5px;
+    background: #0f172a;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .progress-pct {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    min-width: 30px;
+    text-align: right;
+  }
+
+  .task-deadline {
+    font-size: 10px;
+    display: block;
+    margin-top: 5px;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    color: #334155;
+    font-size: 13px;
+    padding: 16px 0;
+    text-align: center;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid #1a2540;
+    text-align: center;
+    font-size: 10px;
+    color: #1e293b;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="header-title">{{TITLE}}</div>
+      <div class="header-date">{{DATE}}</div>
+    </div>
+    <div class="header-time">{{TIME}}</div>
+  </div>
+
+  <!-- TOP ROW: weather + stats -->
+  <div class="top-row">
+
+    <div class="weather-card">
+      <div class="weather-main">
+        <span class="weather-emoji">{{W_EMOJI}}</span>
+        <div class="weather-temp-block">
+          <span class="weather-temp">{{W_TEMP}}</span><span class="weather-unit">°C</span>
+          <div class="weather-desc">{{W_DESC}}</div>
+        </div>
+      </div>
+      <div class="weather-details">
+        <span>💧 {{W_HUM}}%</span>
+        <span>💨 {{W_WIND}} км/ч</span>
+        <span>🌡️ Ощущается {{W_FEELS}}°C</span>
+      </div>
+      <div class="weather-city">📍 {{W_CITY}}</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card stat-done">
+        <div class="stat-value">{{S_DONE}}</div>
+        <div class="stat-label">Готово</div>
+      </div>
+      <div class="stat-card stat-wip">
+        <div class="stat-value">{{S_WIP}}</div>
+        <div class="stat-label">В работе</div>
+      </div>
+      <div class="stat-card stat-todo">
+        <div class="stat-value">{{S_TODO}}</div>
+        <div class="stat-label">К выполнению</div>
+      </div>
+      <div class="stat-card stat-pct">
+        <div class="stat-value">{{S_PCT}}%</div>
+        <div class="stat-label">Прогресс</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TASKS -->
+  <div class="section-title">Задачи ({{TASK_COUNT}})</div>
+  {{TASK_CARDS}}
+
+  <!-- FOOTER -->
+  <div class="footer">KrabBoard • обновлено {{TIME}}</div>
+
+</body>
+</html>

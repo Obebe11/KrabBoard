@@ -1,0 +1,7 @@
+{
+  "BOT_TOKEN": "ВАШ_ТОКЕН_БОТА",
+  "CHAT_ID": "ВАШ_CHAT_ID",
+  "city": "Moscow",
+  "schedule_hour": 8,
+  "dashboard_title": "Мой дашборд"
+}
