@@ -103,7 +103,7 @@ function buildTaskCards(tasks) {
         </div>
         <div class="progress-row">
           <div class="progress-track">
-            <div class="progress-fill" style="width:${pct}%;background:${color}"></div>
+            <div class="progress-fill" style="width:${pct}%;background:linear-gradient(90deg, ${color}, ${color}99)"></div>
           </div>
           <span class="progress-pct">${pct}%</span>
         </div>
@@ -156,6 +156,7 @@ function renderHTML(weather, tasks, config) {
 
 async function screenshot(html, outPath) {
   const browser = await puppeteer.launch({
+    headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
   const page = await browser.newPage();
@@ -192,8 +193,23 @@ async function sendToTelegram(token, chatId, imagePath, caption) {
 // Main
 // ─────────────────────────────────────────────
 
+function requireFile(filename) {
+  const filePath = path.join(DIR, filename);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(
+      `Ошибка: файл конфигурации не найден — ${filename}\n` +
+      `Убедись, что файл ${filePath} существует и заполнен.`
+    );
+  }
+  return filePath;
+}
+
 async function main() {
   console.log('🚀 KrabBoard: генерация дашборда...');
+
+  requireFile('config.json');
+  requireFile('tasks.json');
+  requireFile('dashboard.html');
 
   const config    = JSON.parse(fs.readFileSync(path.join(DIR, 'config.json'),  'utf8'));
   const tasksData = JSON.parse(fs.readFileSync(path.join(DIR, 'tasks.json'),   'utf8'));
@@ -234,7 +250,13 @@ if (args.includes('--now')) {
 
 } else {
   // Встроенный планировщик: node generate.js
-  const config       = JSON.parse(fs.readFileSync(path.join(DIR, 'config.json'), 'utf8'));
+  const cfgPath = path.join(DIR, 'config.json');
+  if (!fs.existsSync(cfgPath)) {
+    console.error('❌ Ошибка: файл конфигурации не найден — config.json');
+    console.error(`   Создай файл: ${cfgPath}`);
+    process.exit(1);
+  }
+  const config       = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
   const scheduleHour = config.schedule_hour ?? 8;
 
   console.log(`⏰ Планировщик запущен. Дашборд будет отправляться каждый день в ${scheduleHour}:00.`);
