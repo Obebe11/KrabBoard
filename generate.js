@@ -119,12 +119,24 @@ function parseTasks(md) {
   const tasks = [];
   let id = 1;
 
-  // Только имена колонки «Название задачи» (col0).
-  // Намеренно НЕ проверяем остальные ячейки — иначе задача
-  // «Обновить статус проекта» ложно опознавалась бы как заголовок.
+  // Только имена колонки «Название» (col0). Остальные колонки
+  // определяем по содержимому — не по позиции.
   const TITLE_HEADERS = new Set([
     'задача', 'task', 'title', 'название', '#', 'no',
   ]);
+
+  // Словари для контентного определения типа ячейки
+  const STATUSES = {
+    'todo': 'todo', 'in_progress': 'in_progress', 'done': 'done',
+    'в работе': 'in_progress', 'в процессе': 'in_progress',
+    'готово': 'done', 'выполнено': 'done', 'завершено': 'done',
+    'ожидание': 'todo', 'pending': 'todo', 'active': 'in_progress',
+  };
+  const PRIORITIES = {
+    'high': 'high', 'medium': 'medium', 'low': 'low',
+    'высокий': 'high', 'критично': 'high',
+    'средний': 'medium', 'низкий': 'low',
+  };
 
   for (const rawLine of md.split('\n')) {
     const line = rawLine.trim();
@@ -136,42 +148,45 @@ function parseTasks(md) {
     // Пропускаем разделитель |---|---| по наличию ---
     if (line.includes('---')) continue;
 
-    // Парсим ячейки: поддерживаем строки как с закрывающим |, так и без
+    // Поддерживаем строки как с закрывающим |, так и без
     const normalized = line.endsWith('|') ? line : line + '|';
     const cells = normalized.split('|').slice(1, -1).map(c => c.trim());
-    if (cells.length < 2) continue;
+    if (cells.length < 1) continue;
 
-    const [col0, col1 = '', col2 = '', col3 = '', col4 = ''] = cells;
+    const col0 = cells[0];
 
     // Пропускаем строку-заголовок: только col0 проверяем по словарю
     if (!col0 || TITLE_HEADERS.has(col0.toLowerCase())) continue;
-
-    // Guard: колонка «Прогресс» должна быть числом или пустой строкой
-    const rawProg = col1.replace('%', '').trim();
-    if (rawProg !== '' && !/^\d+$/.test(rawProg)) continue;
 
     // Маркер [x] в названии → задача завершена
     const isDoneMarker = /^\[x\]/i.test(col0);
     const title        = col0.replace(/^\[x\]\s*/i, '').trim();
     if (!title) continue;
 
-    // Прогресс
-    const progress = Math.min(100, Math.max(0, parseInt(rawProg, 10) || 0));
+    // Сканируем остальные ячейки по содержимому — без привязки к позиции.
+    // Это позволяет читать таблицы с любым порядком и набором колонок.
+    let progress = 0, deadline = null, priority = 'medium', status = null;
 
-    // Дедлайн: только если похоже на YYYY-MM-DD
-    const deadline = /^\d{4}-\d{2}-\d{2}$/.test(col2.trim()) ? col2.trim() : null;
+    for (const cell of cells.slice(1)) {
+      if (!cell) continue;
+      const lower = cell.toLowerCase().trim();
 
-    // Приоритет
-    const priority = ['high', 'medium', 'low'].includes(col3.toLowerCase())
-      ? col3.toLowerCase() : 'medium';
+      // Статус
+      if (STATUSES[lower] !== undefined) { status = STATUSES[lower]; continue; }
+      // Приоритет
+      if (PRIORITIES[lower] !== undefined) { priority = PRIORITIES[lower]; continue; }
+      // Дедлайн: YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cell.trim())) { deadline = cell.trim(); continue; }
+      // Прогресс: число 0–100 (с % или без)
+      const num = parseInt(cell.replace('%', '').trim(), 10);
+      if (!isNaN(num) && num >= 0 && num <= 100) { progress = num; continue; }
+      // Всё остальное игнорируем (ID, комментарии и т.п.)
+    }
 
-    // Статус
-    let status;
+    // Финализируем статус
     if (isDoneMarker || progress >= 100) {
       status = 'done';
-    } else if (['todo', 'in_progress', 'done'].includes(col4.toLowerCase())) {
-      status = col4.toLowerCase();
-    } else {
+    } else if (!status) {
       status = progress > 0 ? 'in_progress' : 'todo';
     }
 
